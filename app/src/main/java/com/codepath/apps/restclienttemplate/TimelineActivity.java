@@ -1,5 +1,6 @@
 package com.codepath.apps.restclienttemplate;
 
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -7,15 +8,22 @@ import androidx.recyclerview.widget.RecyclerView;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import android.content.Intent;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
+import android.widget.ImageButton;
 import android.widget.Toast;
 
 import com.codepath.apps.restclienttemplate.adapters.TweetsAdapter;
+import com.codepath.apps.restclienttemplate.models.TweetDao;
 import com.codepath.apps.restclienttemplate.models.TweetModel;
+import com.codepath.apps.restclienttemplate.models.TweetWithUser;
+import com.codepath.apps.restclienttemplate.models.UserModel;
 import com.codepath.asynchttpclient.callback.JsonHttpResponseHandler;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -29,7 +37,9 @@ import okhttp3.Headers;
 public class TimelineActivity extends AppCompatActivity {
 
     public static final String TAG = "TimelineActivity";
+    public static final int REQUEST_CODE = 20;
 
+    TweetDao tweetDao;
     TwitterClient client;
     RecyclerView rvTweets;
     List<TweetModel> tweets;
@@ -41,10 +51,11 @@ public class TimelineActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_timeline);
-        Log.i("TimelineActivity", "Inside onCreate()");
-
+        Log.i(TAG, "Inside onCreate()");
+        Log.i(TAG, "FAB BUTTON:: " + R.id.fabCompose);
         client = TwitterApplication.getRestClient(this);
 
+        tweetDao = ((TwitterApplication) getApplicationContext()).getMyDatabase().tweetDao();
         swipeContainer = findViewById(R.id.swipeContainer);
 
         // Configure the refreshing colors
@@ -80,39 +91,44 @@ public class TimelineActivity extends AppCompatActivity {
                 loadMoreData();
             }
         };
+
         // Adds the scroll listener to the recycler view
         rvTweets.addOnScrollListener(scrollListener);
+
+        // Query for existing tweets in the db
+        AsyncTask.execute(new Runnable() {
+            @Override
+            public void run() {
+                Log.i(TAG, "Showing data from database");
+                List<TweetWithUser> tweetWithUsers = tweetDao.recentItems();
+                List<TweetModel> tweetsFromDB = TweetWithUser.getTweetList(tweetWithUsers);
+                adapter.clear();
+                adapter.addAll(tweetsFromDB);
+            }
+        });
+
         populateHomeTimeline();
+
         // Find the toolbar view inside the activity layout
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbarTimeline);
+
         // Sets the Toolbar to act as the ActionBar for this Activity window.
         // Make sure the toolbar exists in the activity and is not null
         setSupportActionBar(toolbar);
         getSupportActionBar().setLogo(R.drawable.ic_launcher_twitter);
-    }
 
-//    @Override
-//    public void onItemClick(int position) {
-//        Toast.makeText(
-//                TimelineActivity.this,
-//                "An item at position " + position + " clicked!",
-//                Toast.LENGTH_SHORT).show();
-//
-//        // Handle item click here:
-////                Log.d("BookListActivity", String.valueOf(abooks.get(position)));
-////                Log.d("BookListActivity", String.valueOf(abooks.get(position).getAuthor()));
-////                Log.d("BookListActivity", String.valueOf(abooks.get(position).getTitle()));
-//
-//        // Get Book at the given position
-//        TweetModel tweetModel = tweets.get(position);
-//
-//        // Pass the book into details activity using extras and Create Intent to start BookDetailActivity
-//        Intent intent = new Intent(TimelineActivity.this, TweetDetailActivity.class);
-//
-//        // Put information we want to send to the activity
-//        intent.putExtra("tweet", Parcels.wrap(tweetModel));
-//        startActivity(intent);
-//    }
+        FloatingActionButton fabCompose = (FloatingActionButton) findViewById(R.id.fabCompose);
+        fabCompose.setOnClickListener(new View.OnClickListener() {
+
+            public void onClick(View v) {
+                Log.i(TAG, "Clicked on fabCompose");
+
+                // Navigate to compose activity
+                Intent intent = new Intent(TimelineActivity.this, ComposeActivity.class);
+                startActivityForResult(intent, REQUEST_CODE);
+            }
+        });
+    }
 
     // Menu icons are inflated just as they were with actionbar
     @Override
@@ -120,6 +136,35 @@ public class TimelineActivity extends AppCompatActivity {
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.menu_main, menu);
         return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        // Compose icon has been selected
+        if (item.getItemId() == R.id.compose) {
+            // Navigate to compose activity
+            Intent intent = new Intent(this, ComposeActivity.class);
+            startActivityForResult(intent, REQUEST_CODE);
+            return true;
+        }
+
+        return true;
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        if (requestCode == REQUEST_CODE && resultCode == RESULT_OK) {
+            // Get data from intent from the intent (Get the tweet object)
+            TweetModel tweet = Parcels.unwrap(data.getParcelableExtra("tweet"));
+            // Update the recycler view with the tweet
+            // Modify data source of tweets
+            tweets.add(0, tweet);
+            // Update the adapter
+            adapter.notifyItemInserted(0);
+            rvTweets.smoothScrollToPosition(0);
+        }
+
+        super.onActivityResult(requestCode, resultCode, data);
     }
 
     private void loadMoreData() {
@@ -163,10 +208,24 @@ public class TimelineActivity extends AppCompatActivity {
 
                 try {
                     adapter.clear();
-                    adapter.addAll(TweetModel.fromJsonArray(jsonArray));
+                    final List<TweetModel> tweetsFromNetwork = TweetModel.fromJsonArray(jsonArray);
+                    adapter.addAll(tweetsFromNetwork);
 //                    adapter.notifyDataSetChanged();
                     // Now we call setRefreshing(false) to signal refresh has finished
                     swipeContainer.setRefreshing(false);
+                    // Query for existing tweets in the db
+                    AsyncTask.execute(new Runnable() {
+                        @Override
+                        public void run() {
+                            Log.i(TAG, "Saving data into database");
+                            // insert user first
+                            List<UserModel> usersFromNetWork = UserModel.fromJsonTweetArray(tweetsFromNetwork);
+                            tweetDao.insertModel(usersFromNetWork.toArray(new UserModel[0]));
+
+                            // insert tweets
+                            tweetDao.insertModel(tweetsFromNetwork.toArray(new TweetModel[0]));
+                        }
+                    });
                 }
                 catch (JSONException e) {
                     Log.e(TAG, "There is a json exception");

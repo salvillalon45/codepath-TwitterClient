@@ -35,4 +35,57 @@
         android:layout_toEndOf="@+id/ivProfileImage"
         android:autoLink="all"
         tools:text="This is my first tweet! I am so in the loop" />
+
+    <ImageButton
+        android:id="@+id/ibReply"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/tvBody"
+        android:layout_alignParentStart="true"
+        android:layout_marginStart="-1dp"
+        android:layout_marginTop="18dp"
+        android:layout_marginEnd="349dp"
+        android:backgroundTint="#00DA1111"
+        app:srcCompat="@android:drawable/ic_menu_set_as" />
+
+    <ImageButton
+        android:id="@+id/ibRetweet"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/tvBody"
+        android:layout_alignParentStart="true"
+        android:layout_marginStart="102dp"
+        android:layout_marginTop="23dp"
+        android:layout_marginEnd="349dp"
+        android:backgroundTint="#00DA1111"
+        android:tint="#DCD4D4"
+        app:srcCompat="@drawable/ic_vector_retweet" />
+
+    <ImageButton
+        android:id="@+id/ibLike"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/tvBody"
+        android:layout_alignParentStart="true"
+        android:layout_marginStart="201dp"
+        android:layout_marginTop="22dp"
+        android:layout_marginEnd="349dp"
+        android:backgroundTint="#00DA1111"
+        android:tint="#DCD4D4"
+        app:srcCompat="@drawable/ic_vector_heart_stroke" />
+
+    <ImageButton
+        android:id="@+id/ibShare"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/tvBody"
+        android:layout_alignParentStart="true"
+        android:layout_marginStart="293dp"
+        android:layout_marginTop="17dp"
+        android:layout_marginEnd="349dp"
+        android:backgroundTint="#00DA1111"
+        android:tint="#DCD4D4"
+        app:srcCompat="@android:drawable/ic_menu_share" />
+
+
 </RelativeLayout>

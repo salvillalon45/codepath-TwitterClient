@@ -1,9 +1,12 @@
 package com.codepath.apps.restclienttemplate.adapters;
 
 import android.content.Context;
+import android.content.Intent;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -11,13 +14,21 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
+import com.codepath.apps.restclienttemplate.ComposeActivity;
 import com.codepath.apps.restclienttemplate.R;
+import com.codepath.apps.restclienttemplate.TimelineActivity;
 import com.codepath.apps.restclienttemplate.models.TweetModel;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import static androidx.core.app.ActivityCompat.startActivityForResult;
+import static androidx.core.content.ContextCompat.startActivity;
+
 public class TweetsAdapter extends RecyclerView.Adapter<TweetsAdapter.ViewHolder> {
+
+    public static final String TAG = "TweetsAdapter";
+    public static final int REQUEST_CODE = 20;
 
     Context context;
     List<TweetModel> tweetModelList;
@@ -69,6 +80,7 @@ public class TweetsAdapter extends RecyclerView.Adapter<TweetsAdapter.ViewHolder
         ImageView ivProfileImage;
         TextView tvBody;
         TextView tvScreenName;
+        ImageButton ibReply;
 
         // itemView represents one row in the recycler view
         public ViewHolder(@NonNull View itemView) {
@@ -76,12 +88,25 @@ public class TweetsAdapter extends RecyclerView.Adapter<TweetsAdapter.ViewHolder
             ivProfileImage = itemView.findViewById(R.id.ivProfileImage);
             tvBody = itemView.findViewById(R.id.tvBody);
             tvScreenName = itemView.findViewById(R.id.tvScreenName);
+            ibReply = itemView.findViewById(R.id.ibReply);
+
         }
 
         public void bind(TweetModel tweetModel) {
             tvBody.setText(tweetModel.body);
             tvScreenName.setText(tweetModel.userModel.screenName);
             Glide.with(context).load(tweetModel.userModel.profileImageUrl).into(ivProfileImage);
+
+            ibReply.setOnClickListener(new View.OnClickListener() {
+
+                public void onClick(View v) {
+                    Log.i(TAG, "Clicked on Reply Button");
+
+                    // Navigate to compose activity
+                    Intent intent = new Intent(context, ComposeActivity.class);
+                    context.startActivity(intent);
+                }
+            });
         }
     }
 }

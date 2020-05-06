@@ -20,6 +20,7 @@
 <!--    </style>-->
     <!-- Color for Toolbar. It is the twitter color -->
     <color name="colorToolbar">#55ACEE</color>
+    <color name="colorFooter">#ffffff</color>
 
     <color name="colorPrimaryDark">#023C68</color><!--i ignore its use-->
     <color name="textColorPrimary">#023C68</color><!--i ignore its use-->
